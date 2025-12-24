@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineRoleta Colorida</title>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --text-color: #f0f0f0;
+            --secondary-color: #2d2d2d;
+            --success-color: #46d369;
+            --danger-color: #ff4757;
+            --info-color: #1e90ff;
+            --accent-color: #ffc107;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 { margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 40px;
+            justify-content: center;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .wheel-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        canvas {
+            border-radius: 50%;
+            box-shadow: 0 0 25px rgba(0,0,0,0.6);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        canvas:hover { transform: scale(1.02); }
+
+        .pointer {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0; height: 0; 
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 40px solid #fff;
+            z-index: 10;
+            filter: drop-shadow(0 4px 2px rgba(0,0,0,0.5));
+        }
+
+        <!--button#spinBtn {
+            margin-top: 25px;
+            padding: 15px 40px;
+            font-size: 1.3rem;
+            background: linear-gradient(45deg, #ff4757, #ff6b81);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(255, 71, 87, 0.4);
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+        button#spinBtn:active { transform: scale(0.95); }
+        button#spinBtn:disabled { background: #555; cursor: not-allowed; box-shadow: none; }-->
+
+        .controls-section {
+            flex: 1;
+            min-width: 300px;
+            background: var(--secondary-color);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        /* Novo campo de Recente */
+        .recent-box {
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px dashed var(--accent-color);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .recent-box h3 { margin: 0; font-size: 0.9rem; color: var(--accent-color); text-transform: uppercase; }
+        .recent-box p { margin: 5px 0 0 0; font-size: 1.4rem; font-weight: bold; color: #fff; }
+
+        .input-group { display: flex; gap: 10px; margin-bottom: 25px; }
+        
+        input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #444;
+            background: #333;
+            color: white;
+            font-size: 1rem;
+        }
+
+        .btn-add {
+            background-color: var(--success-color);
+            color: #fff;
+            border: none;
+            padding: 0 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.5rem;
+        }
+
+        h2 { border-bottom: 2px solid #444; padding-bottom: 10px; font-size: 1.1rem; color: #aaa; margin-top: 20px; }
+
+        ul { list-style: none; padding: 0; max-height: 200px; overflow-y: auto; }
+        li {
+            background: rgba(255,255,255,0.05);
+            margin-bottom: 8px;
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 6px;
+        }
+
+        .btn-remove { background: transparent; border: none; color: var(--danger-color); cursor: pointer; font-size: 1.2rem; }
+
+        .watched-item { opacity: 0.5; }
+        .watched-item span { text-decoration: line-through; }
+        .watched-list li { border-left: 3px solid var(--success-color); }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            backdrop-filter: blur(3px);
+        }
+        .modal-content {
+            background: #2b2b2b;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid #444;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .winner-text { color: var(--success-color); font-size: 2.2rem; margin: 20px 0; font-weight: bold; line-height: 1.2; }
+        .modal-btns { margin-top: 25px; display: flex; flex-direction: column; gap: 10px; }
+        .btn-modal { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem; }
+        .btn-green { background: var(--success-color); color: black; }
+        .btn-red { background: var(--danger-color); color: white; }
+        .btn-grey { background: #555; color: white; }
+        .audio-hint { margin-top: 10px; font-size: 0.8rem; color: #777; }
+    </style>
+</head>
+<body>
+
+    <h1>🍿 ChampaFlix 🍿</h1>
+
+    <div class="container">
+        <div class="wheel-section">
+            <div class="pointer"></div>
+            <canvas id="wheelCanvas" width="500" height="500"></canvas>
+            <!--<button id="spinBtn">GIRAR A ROLETA</button>-->            
+        </div>
+
+        <div class="controls-section">
+            <div class="recent-box">
+                <h3>Sorteado Recentemente</h3>
+                <p id="lastChosenDisplay">- - -</p>
+            </div>
+
+            <div class="input-group">
+                <input type="text" id="movieInput" placeholder="Nome do filme...">
+                <button id="btnAddMovie" class="btn-add">+</button>
+            </div>
+
+            <h2>Na Roleta (<span id="count">0</span>)</h2>
+            <ul id="activeList"></ul>
+
+            <h2>Histórico (Assistidos)</h2>
+            <ul id="watchedList" class="watched-list"></ul>
+            <button onclick="clearHistory()" style="background:transparent; color:#888; border:none; cursor:pointer; font-size:0.8rem; margin-top:5px; text-decoration:underline;">Limpar Histórico</button>
+        </div>
+    </div>
+
+    <div id="winnerModal" class="modal">
+        <div class="modal-content">
+            <h3>🎬 Filme Escolhido!</h3>
+            <div id="winnerName" class="winner-text">Filme</div>
+            <div class="modal-btns">
+                <button class="btn-modal btn-green" onclick="closeWinnerModal()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <h3>Remover Filme</h3>
+            <p>O que deseja fazer com <strong id="deleteMovieName" style="color:white"></strong>?</p>
+            <div class="modal-btns">
+                <button class="btn-modal btn-green" onclick="confirmDelete('watched')">✅ Já Assisti (Mover para histórico)</button>
+                <button class="btn-modal btn-red" onclick="confirmDelete('delete')">❌ Apenas Remover (Excluir)</button>
+                <button class="btn-modal btn-grey" onclick="closeDeleteModal()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let audioCtx = null;
+        const canvas = document.getElementById('wheelCanvas');
+        const ctx = canvas.getContext('2d');
+        let movies = [];
+        let watched = [];
+        let lastChosen = null; // Armazena o mais recente
+        let currentAngle = 0;
+        let isSpinning = false;
+        let spinVelocity = 0;
+        let animationFrameId = null;
+		let lastSoundTime = 0;
+        let lastSliceIndex = -1; 
+        let movieIndexToRemove = -1;
+
+        function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+
+        function playTickSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(500, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1);
+            gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            osc.connect(gainNode); gainNode.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            if(movies.length === 0) movies = ["Pulp Fiction", "Matrix", "Cidade de Deus", "Interestelar"];
+            updateUI();
+            startIdleAnimation();
+            <!--document.getElementById('spinBtn').addEventListener('click', spin);-->
+            document.getElementById('wheelCanvas').addEventListener('click', spin);
+            document.getElementById('btnAddMovie').addEventListener('click', addMovie);
+            document.getElementById('movieInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') addMovie(); });
+        });
+
+        function getRainbowColor(index, total) {
+            const hue = Math.floor((index / total) * 360);
+            return `hsl(${hue}, 70%, 50%)`; 
+        }
+
+        function drawWheel() {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = canvas.width / 2 - 15;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (movies.length === 0) return;
+            const arcSize = (2 * Math.PI) / movies.length;
+            movies.forEach((movie, i) => {
+                const angle = currentAngle + (i * arcSize);
+                ctx.beginPath(); ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, angle, angle + arcSize);
+                ctx.fillStyle = getRainbowColor(i, movies.length); ctx.fill();
+                ctx.lineWidth = 2; ctx.strokeStyle = "#1a1a1a"; ctx.stroke();
+                ctx.save(); ctx.translate(centerX, centerY);
+                ctx.rotate(angle + arcSize / 2); ctx.textAlign = "right";
+                ctx.fillStyle = "#fff"; ctx.font = "bold 15px sans-serif";
+                let text = movie.length > 20 ? movie.substring(0, 18) + '..' : movie;
+                ctx.fillText(text, radius - 30, 5); ctx.restore();
+            });
+            ctx.beginPath(); ctx.arc(centerX, centerY, 40, 0, 2 * Math.PI);
+            ctx.fillStyle = "#fff"; ctx.fill();
+            ctx.fillStyle = "#1a1a1a"; ctx.font = "30px Arial"; ctx.textAlign = "center";
+            ctx.textBaseline = "middle"; ctx.fillText("🎬", centerX, centerY + 2);
+        }
+
+        function startIdleAnimation() {
+            if (isSpinning) return;
+            currentAngle += 0.002; drawWheel();
+            animationFrameId = requestAnimationFrame(startIdleAnimation);
+        }
+
+        function spin() {
+            if (isSpinning || movies.length < 2) return;
+            initAudio(); isSpinning = true;
+            cancelAnimationFrame(animationFrameId);
+            lastSliceIndex = -1;
+            spinVelocity = Math.random() * 0.2 + 0.45; 
+            <!--document.getElementById('spinBtn').disabled = true;-->
+            requestAnimationFrame(animateSpin);
+        }
+
+        function animateSpin() {
+            if (spinVelocity > 0.001) {
+                currentAngle += spinVelocity;
+                spinVelocity *= 0.995; 
+                const arcSize = (2 * Math.PI) / movies.length;
+                const rotation = currentAngle % (2 * Math.PI);
+                const rawIndex = Math.floor(((2 * Math.PI - rotation) / arcSize) + 100 * movies.length); 
+                const currentIndex = rawIndex % movies.length;
+                if (lastSliceIndex !== -1 && currentIndex !== lastSliceIndex) {
+					const now = performance.now();
+					if (now - lastSoundTime > 40) { 
+						playTickSound();
+						lastSoundTime = now;
+					}
+				}
+                lastSliceIndex = currentIndex;
+                drawWheel();
+                requestAnimationFrame(animateSpin);
+            } else { finishSpin(); }
+        }
+
+        function finishSpin() {
+            isSpinning = false;
+            <!--document.getElementById('spinBtn').disabled = false;-->
+            const arcSize = (2 * Math.PI) / movies.length;
+            const rotation = currentAngle % (2 * Math.PI);
+            const pointerOffset = 1.5 * Math.PI; 
+            let index = Math.floor(((2 * Math.PI - rotation + pointerOffset) % (2 * Math.PI)) / arcSize);
+            index = index % movies.length;
+            
+            lastChosen = movies[index]; // Atualiza o mais recente
+            updateUI(); 
+            showWinnerModal(lastChosen);
+        }
+
+        function addMovie() {
+            const input = document.getElementById('movieInput');
+            if (input.value.trim()) {
+                movies.push(input.value.trim());
+                input.value = ''; saveData(); updateUI();
+                if(!isSpinning) drawWheel();
+            }
+        }
+
+        window.requestRemove = function(index) {
+            if (isSpinning) return;
+            movieIndexToRemove = index;
+            document.getElementById('deleteMovieName').innerText = movies[index];
+            document.getElementById('deleteModal').style.display = 'flex';
+        }
+
+        window.confirmDelete = function(action) {
+            const movie = movies[movieIndexToRemove];
+            if (action === 'watched') watched.unshift(movie);
+            if (lastChosen === movie) lastChosen = null; // Limpa se remover o atual
+            movies.splice(movieIndexToRemove, 1);
+            saveData(); updateUI(); closeDeleteModal(); drawWheel();
+        }
+
+        window.closeDeleteModal = function() { document.getElementById('deleteModal').style.display = 'none'; }
+        window.closeWinnerModal = function() { document.getElementById('winnerModal').style.display = 'none'; startIdleAnimation(); }
+        window.clearHistory = function() { if(confirm("Limpar histórico?")) { watched = []; saveData(); updateUI(); } }
+
+        function updateUI() {
+            // Atualiza o campo de sorteado recentemente
+            const display = document.getElementById('lastChosenDisplay');
+            display.innerText = lastChosen ? lastChosen : "- - -";
+
+            const activeList = document.getElementById('activeList');
+            activeList.innerHTML = '';
+            movies.forEach((movie, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `<span>${movie}</span><button class="btn-remove" onclick="requestRemove(${index})">&times;</button>`;
+                activeList.appendChild(li);
+            });
+            document.getElementById('count').innerText = movies.length;
+
+            const watchedList = document.getElementById('watchedList');
+            watchedList.innerHTML = '';
+            watched.forEach(movie => {
+                const li = document.createElement('li');
+                li.classList.add('watched-item');
+                li.innerHTML = `<span>${movie}</span>`;
+                watchedList.appendChild(li);
+            });
+        }
+
+        function showWinnerModal(name) {
+            document.getElementById('winnerName').innerText = name;
+            document.getElementById('winnerModal').style.display = 'flex';
+        }
+
+        function saveData() { localStorage.setItem('cineRoletaV4', JSON.stringify({ movies, watched, lastChosen })); }
+        function loadData() {
+            const data = JSON.parse(localStorage.getItem('cineRoletaV4'));
+            if (data) {
+                movies = data.movies || [];
+                watched = data.watched || [];
+                lastChosen = data.lastChosen || null;
+            }
+        }
+    </script>
+</body>
+</html>
